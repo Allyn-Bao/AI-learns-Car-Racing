@@ -14,7 +14,7 @@ def get_boundary_points(image_path, num_points, scale_percent):
     height = int(image.shape[0] * scale_percent / 100)
     resized_image = cv2.resize(image, (width, height))
 
-    gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    gray_image = cv2.cvtColor(resized_image, cv2.COLOR_BGR2GRAY)
 
     # Threshold the grayscale image to create binary images for orange and blue
     _, orange_binary = cv2.threshold(gray_image, 100, 255, cv2.THRESH_BINARY)
@@ -55,10 +55,10 @@ def get_limit_points(image_path, num_points, scale_percent):
     # rescale
     width = int(image.shape[1] * scale_percent / 100)
     height = int(image.shape[0] * scale_percent / 100)
-    resized_image = cv2.resize(image, (width, height))
+    resized_image = cv2.resize(gray_image, (width, height))
 
     # Threshold the grayscale image to create a binary image for white lines
-    _, binary_image = cv2.threshold(gray_image, 200, 255, cv2.THRESH_BINARY)
+    _, binary_image = cv2.threshold(resized_image, 200, 255, cv2.THRESH_BINARY)
 
     # Find contours for white lines
     contours, _ = cv2.findContours(binary_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -88,8 +88,11 @@ def image_processing_output_test(track_image_path, points_list, scale_percent):
     width = int(track_image.get_width() * scale_percent / 100)
     height = int(track_image.get_height() * scale_percent / 100)
     resized_track_image = pygame.transform.scale(track_image, (width, height))
+    # Convert to a NumPy array and then convert BGR to RGB
+    resized_track_image_array = pygame.surfarray.array3d(resized_track_image)
+    resized_track_image_array = resized_track_image_array[:, :, ::-1]
 
-    image_width, image_height = resized_track_image.get_width(), track_image.get_height()
+    image_width, image_height = resized_track_image.get_width(), resized_track_image.get_height()
 
     # Set the dimensions of the display window
     screen_width = image_width
@@ -120,7 +123,7 @@ def image_processing_output_test(track_image_path, points_list, scale_percent):
             pygame.draw.lines(contour_surface, red, False, points, 3)
 
         # Blit the track_image and the contour surface onto the screen
-        screen.blit(resized_track_image, (0, 0))
+        screen.blit(pygame.surfarray.make_surface(resized_track_image_array), (0, 0))
         screen.blit(contour_surface, (0, 0))
 
         # Update the display
