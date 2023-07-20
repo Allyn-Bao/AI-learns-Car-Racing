@@ -2,10 +2,18 @@ import cv2
 import numpy as np
 import pygame
 import sys
+import os
 
-def get_boundary_points(image_path, num_points):
+
+def get_boundary_points(image_path, num_points, scale_percent):
     # Load the image and convert to grayscale
     image = cv2.imread(image_path)
+
+    # rescaling
+    width = int(image.shape[1] * scale_percent / 100)
+    height = int(image.shape[0] * scale_percent / 100)
+    resized_image = cv2.resize(image, (width, height))
+
     gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
     # Threshold the grayscale image to create binary images for orange and blue
@@ -39,10 +47,15 @@ def get_boundary_points(image_path, num_points):
     return {"orange": orange_points_list, "blue": blue_points_list}
 
 
-def get_limit_points(image_path, num_points):
+def get_limit_points(image_path, num_points, scale_percent):
     # Load the image and convert to grayscale
     image = cv2.imread(image_path)
     gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+    # rescale
+    width = int(image.shape[1] * scale_percent / 100)
+    height = int(image.shape[0] * scale_percent / 100)
+    resized_image = cv2.resize(image, (width, height))
 
     # Threshold the grayscale image to create a binary image for white lines
     _, binary_image = cv2.threshold(gray_image, 200, 255, cv2.THRESH_BINARY)
@@ -64,13 +77,19 @@ def get_limit_points(image_path, num_points):
     return {"limit": limit_points_list}
 
 
-def image_processing_output_test(track_image_path, points_list):
+def image_processing_output_test(track_image_path, points_list, scale_percent):
     # Initialize Pygame
     pygame.init()
 
     # Load the track_image and get its dimensions
     track_image = pygame.image.load(track_image_path)
-    image_width, image_height = track_image.get_width(), track_image.get_height()
+
+    # rescale
+    width = int(track_image.get_width() * scale_percent / 100)
+    height = int(track_image.get_height() * scale_percent / 100)
+    resized_track_image = pygame.transform.scale(track_image, (width, height))
+
+    image_width, image_height = resized_track_image.get_width(), track_image.get_height()
 
     # Set the dimensions of the display window
     screen_width = image_width
@@ -101,7 +120,7 @@ def image_processing_output_test(track_image_path, points_list):
             pygame.draw.lines(contour_surface, red, False, points, 3)
 
         # Blit the track_image and the contour surface onto the screen
-        screen.blit(track_image, (0, 0))
+        screen.blit(resized_track_image, (0, 0))
         screen.blit(contour_surface, (0, 0))
 
         # Update the display
@@ -114,29 +133,25 @@ def image_processing_output_test(track_image_path, points_list):
     sys.exit()
 
 
-
-
-
 if __name__ == "__main__":
     # Usage example:
-    image_path = "track_boundary_image.png"
+    boundary_image_path = os.path.join("assets", "track-boundary.jpg")
     num_points = 100  # Adjust the number of points as needed
 
-    boundary_points_dict = get_boundary_points(image_path, num_points)
+    boundary_points_dict = get_boundary_points(boundary_image_path, num_points, 10)
     print(boundary_points_dict)
 
-    image_path = "track_limit_image.png"
+    limit_image_path = os.path.join("assets", "track-limit.jpg")
     num_points = 100  # Adjust the number of points as needed
 
-    limit_points_dict = get_limit_points(image_path, num_points)
+    limit_points_dict = get_limit_points(limit_image_path, num_points, 10)
     print(limit_points_dict)
 
     # Usage example:
-    track_image_path = "track_image.png"
-    points_list = [  # Replace this with the output from the previous functions
-        # List of points for orange loop
-        # List of points for blue loop
-        # List of points for track limit
-    ]
+    track_image_path = os.path.join("assets", "Circuit.jpg")
+    points_list = []
+    points_list += boundary_points_dict["orange"]
+    points_list += boundary_points_dict["blue"]
+    points_list += limit_points_dict["limit"]
 
-    image_processing_output_test(track_image_path, points_list)
+    image_processing_output_test(track_image_path, points_list, 10)
